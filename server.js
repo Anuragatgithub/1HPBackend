@@ -6,53 +6,71 @@ import dotenv from "dotenv";
 dotenv.config();
 const app = express();
 
+/**
+ * CORS — localhost + production
+ */
 app.use(cors({
-  origin: "https://quiet-praline-074788.netlify.app" // your frontend domain
+  origin: [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:3000",
+    "https://quiet-praline-074788.netlify.app"
+  ]
 }));
 
 app.use(express.json());
 
+/**
+ * Mail transporter (created once)
+ */
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: { rejectUnauthorized: false }
+});
+
+/**
+ * SEND ENQUIRY
+ */
 app.post("/send-enquiry", async (req, res) => {
-  const { name, email, phone, businessType, message } = req.body;
+  const { name, email, phone, type, businessType, message } = req.body;
 
   if (!name || !email) {
-    return res.status(400).json({ success: false, message: "Missing required fields" });
+    return res.status(400).json({ success: false });
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: { rejectUnauthorized: false }
-    });
-
     await transporter.sendMail({
       from: `1 Heart Productions <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
       replyTo: email,
-      subject: `New Enquiry - ${businessType}`,
+      subject: `New Enquiry - ${type || businessType || "General"}`,
       html: `
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
-        <p><b>Phone:</b> ${phone}</p>
-        <p><b>Business Type:</b> ${businessType}</p>
-        <p><b>Message:</b> ${message}</p>
+        <p><b>Phone:</b> ${phone || "NA"}</p>
+        <p><b>Event Type:</b> ${type || "NA"}</p>
+        <p><b>Business Type:</b> ${businessType || "NA"}</p>
+        <p><b>Message:</b> ${message || "NA"}</p>
       `
     });
 
-    res.json({ success: true, message: "Email sent" });
+    // ✅ IMPORTANT: explicit JSON success
+    return res.status(200).json({ success: true });
 
-  } catch (e) {
-    console.error("Mail Error:", e);
-    res.status(500).json({ success: false, message: "Mail failed" });
+  } catch (err) {
+    console.error("Mail error:", err);
+
+    // ✅ Still respond
+    return res.status(200).json({ success: false });
   }
 });
 
-const PORT = process.env.PORT || 5000;
 
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Backend running on ${PORT}`);
+  console.log(`Backend running on http://localhost:${PORT}`);
 });

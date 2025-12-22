@@ -1,0 +1,10 @@
+{
+  "name":"1hp-backend",
+  "type":"module",
+  "dependencies":{
+    "express":"^4.19.2",
+    "cors":"^2.8.5",
+    "nodemailer":"^6.9.14",
+    "dotenv":"^16.4.5"
+  }
+}

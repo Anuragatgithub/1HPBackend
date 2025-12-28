@@ -16,6 +16,8 @@ app.use(
       "http://localhost:3000",
       "https://quiet-praline-074788.netlify.app",
     ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
   })
 );
 
@@ -30,35 +32,30 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
 });
 
-/* ------------- TEST MAIL ------------- */
-app.get("/test-mail", async (req, res) => {
-  try {
-    await transporter.sendMail({
-      from: `"1HP" <${process.env.SMTP_USER}>`,
-      to: "yourmail@gmail.com", // change to your email
-      subject: "Brevo SMTP Test",
-      text: "Brevo SMTP working fine 🚀",
-    });
-
-    return res.json({ success: true, message: "Mail sent" });
-  } catch (err) {
-    console.error("Mail error:", err);
-    return res.status(500).json({ success: false, error: err.message });
-  }
+/* ------------ HEALTH CHECK ------------ */
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
-/* ----------- SEND ENQUIRY ----------- */
-app.post("/send-enquiry", async (req, res) => {
+/* ----------- SEND ENQUIRY (NON-BLOCKING) ----------- */
+app.post("/send-enquiry", (req, res) => {
   const { name, email, phone, type, businessType, message } = req.body;
 
   if (!name || !email) {
     return res.status(400).json({ success: false });
   }
 
-  try {
-    await transporter.sendMail({
+  // ✅ FRONTEND KO TURANT RESPONSE
+  res.status(200).json({ success: true });
+
+  // 🔥 MAIL BACKGROUND ME
+  transporter
+    .sendMail({
       from: `"1 Heart Productions" <${process.env.SMTP_USER}>`,
       to: process.env.SMTP_USER,
       replyTo: email,
@@ -71,17 +68,17 @@ app.post("/send-enquiry", async (req, res) => {
         <p><b>Business Type:</b> ${businessType || "NA"}</p>
         <p><b>Message:</b> ${message || "NA"}</p>
       `,
+    })
+    .then(() => {
+      console.log("✅ Mail triggered in background");
+    })
+    .catch((err) => {
+      console.error("❌ Mail error:", err.message);
     });
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("Mail error:", err);
-    return res.status(500).json({ success: false });
-  }
 });
 
 /* ------------- SERVER ------------- */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
+  console.log(`🚀 Backend running on port ${PORT}`);
 });

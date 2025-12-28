@@ -4,54 +4,52 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 dotenv.config();
+
 const app = express();
 
-/**
- * CORS — localhost + production
- */
-app.use(cors({
-  origin: [
-    "http://localhost:5500",
-    "http://127.0.0.1:5500",
-    "http://localhost:3000",
-    "https://quiet-praline-074788.netlify.app"
-  ]
-}));
+/* ---------------- CORS ---------------- */
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5500",
+      "http://127.0.0.1:5500",
+      "http://localhost:3000",
+      "https://quiet-praline-074788.netlify.app",
+    ],
+  })
+);
 
 app.use(express.json());
 
-/**
- * Mail transporter (created once)
- */
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASS,
-//   },
-//   tls: { rejectUnauthorized: false }
-// });
-
+/* ------------- BREVO SMTP ------------- */
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp-relay.brevo.com",
   port: 587,
-  secure: false, // MUST be false for 587
+  secure: false,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
-  tls: {
-    rejectUnauthorized: false,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
 });
 
+/* ------------- TEST MAIL ------------- */
+app.get("/test-mail", async (req, res) => {
+  try {
+    await transporter.sendMail({
+      from: `"1HP" <${process.env.SMTP_USER}>`,
+      to: "yourmail@gmail.com", // change to your email
+      subject: "Brevo SMTP Test",
+      text: "Brevo SMTP working fine 🚀",
+    });
 
-/**
- * SEND ENQUIRY
- */
+    return res.json({ success: true, message: "Mail sent" });
+  } catch (err) {
+    console.error("Mail error:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ----------- SEND ENQUIRY ----------- */
 app.post("/send-enquiry", async (req, res) => {
   const { name, email, phone, type, businessType, message } = req.body;
 
@@ -61,8 +59,8 @@ app.post("/send-enquiry", async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `1 Heart Productions <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+      from: `"1 Heart Productions" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER,
       replyTo: email,
       subject: `New Enquiry - ${type || businessType || "General"}`,
       html: `
@@ -72,22 +70,18 @@ app.post("/send-enquiry", async (req, res) => {
         <p><b>Event Type:</b> ${type || "NA"}</p>
         <p><b>Business Type:</b> ${businessType || "NA"}</p>
         <p><b>Message:</b> ${message || "NA"}</p>
-      `
+      `,
     });
 
-    // ✅ IMPORTANT: explicit JSON success
     return res.status(200).json({ success: true });
-
   } catch (err) {
     console.error("Mail error:", err);
-
-    // ✅ Still respond
-    return res.status(200).json({ success: false });
+    return res.status(500).json({ success: false });
   }
 });
 
-
+/* ------------- SERVER ------------- */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
+  console.log(`Backend running on port ${PORT}`);
 });

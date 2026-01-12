@@ -22,18 +22,17 @@ app.use(cors({
 app.use(express.json());
 
 // ✅ Mail transporter
+// ✅ Mail transporter (Brevo SMTP)
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // true for 465
+  host: process.env.SMTP_HOST,        // smtp-relay.brevo.com
+  port: Number(process.env.SMTP_PORT), // 587
+  secure: false, // true only for 465
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // App Password
-  },
-  tls: {
-    rejectUnauthorized: false,
+    user: process.env.SMTP_USER, // Brevo login
+    pass: process.env.SMTP_PASS, // Brevo SMTP password
   },
 });
+
 
 
 // ✅ Route
@@ -41,9 +40,10 @@ app.post("/send-enquiry", async (req, res) => {
   const { name, email, phone, type, businessType, message } = req.body;
 
   try {
+    // Admin notification
     await transporter.sendMail({
-      from: `"1 Heart Production Website" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+      from: `"1 Heart Productions" <1heart.eventproductions@gmail.com>`,
+      to: "1heart.eventproductions@gmail.com",
       replyTo: email,
       subject: `New Enquiry - ${type || businessType || "General"}`,
       html: `
@@ -56,33 +56,28 @@ app.post("/send-enquiry", async (req, res) => {
       `,
     });
 
-    // ✅ Auto-reply to customer
-await transporter.sendMail({
-  from: `"1 Heart Productions" <${process.env.EMAIL_USER}>`,
-  to: email,
-  subject: "We received your enquiry – 1 Heart Productions",
-  html: `
-    <div style="font-family: Arial, sans-serif; line-height:1.6">
-      <h3>Hi ${name},</h3>
+    // Auto-reply
+    await transporter.sendMail({
+      from: `"1 Heart Productions" <1heart.eventproductions@gmail.com>`,
+      to: email,
+      subject: "We received your enquiry – 1 Heart Productions",
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height:1.6">
+          <h3>Hi ${name},</h3>
+          <p>Thank you for contacting <b>1 Heart Productions</b>.
+          We have received your enquiry and our team will contact you shortly.</p>
 
-      <p>Thank you for contacting <b>1 Heart Productions</b>.  
-      We have received your enquiry and our team will contact you shortly.</p>
+          <ul>
+            <li><b>Phone:</b> ${phone || "NA"}</li>
+            <li><b>Service:</b> ${type || businessType || "General Enquiry"}</li>
+          </ul>
 
-      <p><b>Your Details:</b></p>
-      <ul>
-        <li><b>Phone:</b> ${phone || "NA"}</li>
-        <li><b>Service:</b> ${type || businessType || "General Enquiry"}</li>
-      </ul>
-
-      <p>If your requirement is urgent, you may also reach us on WhatsApp.</p>
-
-      <p>Warm Regards,<br>
-      <b>Team 1 Heart Productions</b><br>
-      📞 +91 91707 27478</p>
-    </div>
-  `
-});
-
+          <p>Warm Regards,<br>
+          <b>Team 1 Heart Productions</b><br>
+          📞 +91 91707 27478</p>
+        </div>
+      `,
+    });
 
     return res.status(200).json({ success: true });
 
@@ -91,6 +86,10 @@ await transporter.sendMail({
     return res.status(500).json({ success: false });
   }
 });
+
+
+  
+
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;

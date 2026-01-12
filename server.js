@@ -1,7 +1,8 @@
 import express from "express";
-import nodemailer from "nodemailer";
 import cors from "cors";
 import dotenv from "dotenv";
+import axios from "axios";
+
 
 dotenv.config();
 
@@ -23,66 +24,76 @@ app.use(express.json());
 
 // ✅ Mail transporter
 // ✅ Mail transporter (Brevo SMTP)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,        // smtp-relay.brevo.com
-  port: Number(process.env.SMTP_PORT), // 587
-  secure: false, // true only for 465
-  auth: {
-    user: process.env.SMTP_USER, // Brevo login
-    pass: process.env.SMTP_PASS, // Brevo SMTP password
-  },
-});
 
 
 
-// ✅ Route
+//Route
 app.post("/send-enquiry", async (req, res) => {
   const { name, email, phone, type, businessType, message } = req.body;
 
   try {
-    // Admin notification
-    await transporter.sendMail({
-      from: `"1 Heart Productions" <1heart.eventproductions@gmail.com>`,
-      to: "1heart.eventproductions@gmail.com",
-      replyTo: email,
-      subject: `New Enquiry - ${type || businessType || "General"}`,
-      html: `
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Phone:</b> ${phone || "NA"}</p>
-        <p><b>Event Type:</b> ${type || "NA"}</p>
-        <p><b>Business Type:</b> ${businessType || "NA"}</p>
-        <p><b>Message:</b> ${message || "NA"}</p>
-      `,
-    });
+    // Admin email
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "1 Heart Productions",
+          email: "1heart.eventproductions@gmail.com"
+        },
+        to: [{ email: "1heart.eventproductions@gmail.com" }],
+        subject: `New Enquiry - ${type || businessType || "General"}`,
+        htmlContent: `
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Phone:</b> ${phone || "NA"}</p>
+          <p><b>Event Type:</b> ${type || "NA"}</p>
+          <p><b>Business Type:</b> ${businessType || "NA"}</p>
+          <p><b>Message:</b> ${message || "NA"}</p>
+        `
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-    // Auto-reply
-    await transporter.sendMail({
-      from: `"1 Heart Productions" <1heart.eventproductions@gmail.com>`,
-      to: email,
-      subject: "We received your enquiry – 1 Heart Productions",
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height:1.6">
+    // Auto-reply to user
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "1 Heart Productions",
+          email: "1heart.eventproductions@gmail.com"
+        },
+        to: [{ email }],
+        subject: "We received your enquiry – 1 Heart Productions",
+        htmlContent: `
           <h3>Hi ${name},</h3>
           <p>Thank you for contacting <b>1 Heart Productions</b>.
-          We have received your enquiry and our team will contact you shortly.</p>
+          We have received your enquiry and will contact you shortly.</p>
 
-          <ul>
-            <li><b>Phone:</b> ${phone || "NA"}</li>
-            <li><b>Service:</b> ${type || businessType || "General Enquiry"}</li>
-          </ul>
+          <p><b>Phone:</b> ${phone || "NA"}</p>
+          <p><b>Service:</b> ${type || businessType || "General Enquiry"}</p>
 
-          <p>Warm Regards,<br>
+          <p>Warm regards,<br>
           <b>Team 1 Heart Productions</b><br>
-          📞 +91 91707 27478</p>
-        </div>
-      `,
-    });
+          +91 91707 27478</p>
+        `
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
     return res.status(200).json({ success: true });
 
   } catch (err) {
-    console.error("Mail error:", err);
+    console.error("Brevo API error:", err.response?.data || err.message);
     return res.status(500).json({ success: false });
   }
 });

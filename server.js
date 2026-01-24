@@ -14,11 +14,18 @@ app.use(cors({
     "http://localhost:5500",
     "http://127.0.0.1:5500",
     "http://localhost:3000",
-    "https://oneheartproduction.netlify.app",
-    "https://idyllic-fudge-58d003.netlify.app", // if frontend live
+
+    // ✅ OLD Netlify (keep for safety)
+    "https://idyllic-fudge-58d003.netlify.app",
+
+    // ✅ NEW CUSTOM DOMAIN (VERY IMPORTANT)
+    "https://1heartproductions.in",
+    "https://www.1heartproductions.in"
   ],
   methods: ["POST"],
+  allowedHeaders: ["Content-Type"]
 }));
+
 
 app.use(express.json());
 
@@ -109,3 +116,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
 
+
+
+//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

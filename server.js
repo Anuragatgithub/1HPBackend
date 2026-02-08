@@ -17,6 +17,7 @@ app.use(cors({
 
     // ✅ OLD Netlify (keep for safety)
     "https://idyllic-fudge-58d003.netlify.app",
+    "https://onehp-backend.onrender.com/send-enquiry",
 
     // ✅ NEW CUSTOM DOMAIN (VERY IMPORTANT)
     "https://1heartproductions.in",
@@ -36,7 +37,15 @@ app.use(express.json());
 
 //Route
 app.post("/send-enquiry", async (req, res) => {
-  const { name, email, phone, type, businessType, message } = req.body;
+  const {
+  name,
+  email,
+  phone,
+  type,
+  businessType,
+  performanceCategory,
+  message
+} = req.body;
 
   try {
     // Admin email
@@ -55,6 +64,7 @@ app.post("/send-enquiry", async (req, res) => {
           <p><b>Phone:</b> ${phone || "NA"}</p>
           <p><b>Event Type:</b> ${type || "NA"}</p>
           <p><b>Business Type:</b> ${businessType || "NA"}</p>
+          <p><b>Performance Category:</b> ${performanceCategory || "NA"}</p>
           <p><b>Message:</b> ${message || "NA"}</p>
         `
       },
@@ -83,6 +93,8 @@ app.post("/send-enquiry", async (req, res) => {
 
           <p><b>Phone:</b> ${phone || "NA"}</p>
           <p><b>Service:</b> ${type || businessType || "General Enquiry"}</p>
+          <p><b>Performance Category:</b> ${performanceCategory || "NA"}</p>
+
 
           <p>Warm regards,<br>
           <b>Team 1 Heart Productions</b><br>

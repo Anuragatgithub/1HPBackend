@@ -44,7 +44,8 @@ app.post("/send-enquiry", async (req, res) => {
   type,
   businessType,
   performanceCategory,
-  message
+  message,
+  passType
 } = req.body;
 
   try {
@@ -66,6 +67,7 @@ app.post("/send-enquiry", async (req, res) => {
           <p><b>Business Type:</b> ${businessType || "NA"}</p>
           <p><b>Performance Category:</b> ${performanceCategory || "NA"}</p>
           <p><b>Message:</b> ${message || "NA"}</p>
+          <p><b>Pass Type:</b> ${passType || "NA"}</p>
         `
       },
       {
@@ -94,6 +96,7 @@ app.post("/send-enquiry", async (req, res) => {
           <p><b>Phone:</b> ${phone || "NA"}</p>
           <p><b>Service:</b> ${type || businessType || "General Enquiry"}</p>
           <p><b>Performance Category:</b> ${performanceCategory || "NA"}</p>
+           <p><b>Pass Type:</b> ${passType || "NA"}</p>
 
 
           <p>Warm regards,<br>

@@ -67,7 +67,7 @@ app.post("/send-enquiry", async (req, res) => {
           <p><b>Business Type:</b> ${businessType || "NA"}</p>
           <p><b>Performance Category:</b> ${performanceCategory || "NA"}</p>
           <p><b>Message:</b> ${message || "NA"}</p>
-          <p><b>Pass Type:</b> ${passType || "NA"}</p>
+          <p><b>pass Type:</b> ${passType || "NA"}</p>
         `
       },
       {
